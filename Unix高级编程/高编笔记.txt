@@ -1,0 +1,1685 @@
+
+
+getpid 获取当前进程的pid
+                #include <sys/types.h>
+       #include <unistd.h>
+          pid_t getpid(void);
+        获取的进程Id号是通过返回值带回的！
+        
+        
+所有程序 运行 起来之后就是一个进程
+        /proc/进程id  存放 的是程序运行时的所有信息！
+        任何程序 的内存空间分为4 个基本域
+一个程序 在内存当中占四个区域：
+        全局栈区 局部栈区  堆区   代码区
+
+
+        malloc的工作原理：
+                        int* a=(int*)malloc(4);//实际上分配的并不止是4个字节！
+                        它使用链表来维护分配空间
+                        链表的构成：分配的空间，上一个空间数据，下一个空间数据 ，空间大小信
+                                息！
+                        struct Node
+                        {
+                                分配的空间;
+                                上一个空间数据;
+                                下一个空间数据;    //实质上双向链表！
+                                空间大小信息;     //用于管理
+                        }
+                使用malloc千万不要越界访问！
+                
+        new跟malloc的关系  delete和free的关系
+                new的实现是用malloc 来实现的
+                new使用malloc创建空间之后 还要初始化空间基本类型直接初始化为默认值，自定
+                义类型会调用相关的构造器
+                        new只会调用一个构造器
+                        new[]循环对每个区域调用 构造器
+                        delete的实现是用free 来实现的
+                        delete在调用析构器之后再调用free;
+                        
+        进程之间的数据沟通是用文件，内存之间数据都是文件 
+        
+        
+        虚拟内存：
+                一个程序不能访问另外一个程序 地址指向的空间
+                        每个程序的开始地址都 是0x8008400
+                        程序中使用的地址不是物理地址而是逻辑地址（虚拟内存），逻辑地址不仅仅
+                                是编号，是使用int 4字节整数表示的最大地址，4g 每个程序提供了4g
+                                访问能力
+                        虚拟内存（逻辑地址）必须跟物理地址关联才有意义这个关联的过程，称之为
+                        内存映射！
+                        虚拟内存跟物理内存映射的时候有一个基本单位 4k
+                        内存管理都 是按照分页式管理，一个内存页就是4k
+                        段错误：无效的访问；
+                        合法访问：malloc出来的几个字节的空间那你就只能访问这几个字节的空间；
+                        非法访问：你访问malloc出来之外的空间;
+                        
+        虚拟内存的分配方式：
+                堆：在堆里面分配的空间，需要用户去手动释放；
+                栈：编译器自动生成代码维护；
+                brk sbrk;
+                        系统帮助手册: 
+                                man 章节 关键字
+                        帮助手册：1－8章：
+                                1：lunix 系统shell命令
+                                2：系统提供的API（系统函数）
+                                3： 标准c函数
+                                7:      系统编程帮助
+                
+        brk , sbrk: 分配, 释放内存
+                        #include <unistd.h>
+               int brk(void* addr);     分配空间以及释放空间
+                                                                返回值：成功返回0，失败返回 －1
+                         void *sbrk(int size);   返回空间地址
+                                                返回值：成功就返回地址，失败返回（void*）-1
+                
+                
+        返回值类型是（void*－－表示可以转换成任意类型）,所以要类型强制转换；
+                        例子：  nt* p=NULL;
+                                                p=(int*)sbrk(0);
+
+                sbrk(4) （分两步）先找到程序空闲内存的首地址
+                                                   然后分配4个字节大小的空间！  
+                
+                sbrk(-4) (也是分两步) 先找到空闲的内存首地址；
+                                        然后释放掉4个字节的空间
+                                        
+                sbrk与brk后台系统维护的一个指针，默认的情况下是NULL，调用 sbrk
+                                时判定指针是否为NULL
+                                是：得到大块空闲空间的首地址，初始化指针，同时把指针＋size
+                                否：返回指针，并把指针＋size 
+                                sbrk与brk都是维护的一个位置，brk改变绝对位置，sbrk改变的是
+                                相对位置；
+                
+                内存映射--映射虚拟内存
+                        没有任何额外 维护数据的内存分配
+                        mmap（分配） mumap（释放） 
+                #include <sys/mman.h>
+
+       void *mmap(void *start,   //指定映射的虚拟地址，如果说为0，则由
+                                                                系统指定开始位置
+                        size_t length,  //映射的空间大小 pagesize的倍数
+                        int prot,   //映射的方式 PORT_NONE    PORT_READ
+                                                                PORT_write      PORT_EXEC
+                        int flags,    //映射的权限MAP_SHARED   
+                                                                MAP_PRIVATE(2选1 )
+                  int fd, //文件描述符
+                  off_t offset);//文件中的映射开始位置
+                  
+            内存映射：需要使用匿名映射（MAP_ANONYMOUS）
+            
+            文件映射：需要映射到某个文件（只有文件映射mmap函数的最后两个参数
+                                才有效）
+                                
+         返回值：
+                成功：返回一个地址，地址是指向映射成功的那一版 空间的
+                失败：返回（void*）-1
+                        
+
+       int munmap(void *start, 
+                        size_t length);
+
+                
+                
+        malloc/free  适用范围：一般是小而多的时候使用(几个字节);
+        brk /sbrk               同类型的大块数据 动态维护指针
+        mmap/munmap     控制内存的访问，使用文件映射 控制内存的共享
+        
+        编程工具
+                gcc
+                        －o  输出文件名          （重命名）
+                        －g                                     产生调试信息
+                        －w                                     关闭警告信息
+                        －W                                             all error(将警告直接变成错误)
+                    －Wall                                      显示所有警告
+                    －c                                 只编译不连接
+                    －E                                 预徽标
+                    －S                                 汇编
+                    －x                                 指定编译的语言类型C++  c
+                    
+        文件类型：
+                        .c      c文件 
+                        .cpp    c++文件
+                        .h                      
+                        .hpp    头文件C++
+                        .o       连接文件
+                        .a               归档文件  静态库文件（window下是.lib）
+                        .so     动态库文件
+                        .i              预编译文件
+                        .s      汇编文件   
+                
+        
+        静态库的编译以及使用过程：
+                编译过程：
+                        1：编译生成 目标文件
+                                gcc -c -static  xxx.c (你编写的当工具使用的文件)
+                        2:将目标文件 .o文件归档成静态库文件，使用的工具是ar -r
+                                ar -r   静态库文件(lib库名.a)    被归档文件(第一步生成.o文件)
+                        3：使用静态库
+                                使用方式1：
+                                gcc  带有主函数的.c文件，  -l库名   -L静库所在的路径 
+                                
+                                使用方式2: 
+                                gcc  带有主函数的.c文件     静态库文件(lib库名.a)
+                                
+                库文件的一个命名方式
+                                lib库名.a
+                                
+                                
+        课堂练习：
+                查找素数：
+                        封装到一个静态库里面！
+                        
+        作业：从1－1000里面找出所有的素数！
+                用三种方法：
+                         brk       sbrk;
+                         malloc    free;
+                         mmap    munmap;
+
+
+采用库的方式 管理有什么优点
+        1：容易组织代码
+        2：代码的复用性、
+        3：保护版权（源代码保密的作用）
+        静态库的静态的含义：
+                编译好的程序运行 的时候 不依赖库，库只作为 程序 的一部分编译链接
+        静态库的本质
+                就是一个目标文件的归档集合
+
+动态库.so
+        什么是动态库
+                动态库是可执行的，静态库是不能执行的
+                动态库没有main是不能独立执行的
+                动态库在连接的时候是不会成为程序 的一部分的
+                程序 执行的时候需要动态库文件 
+                
+动态库的编译：
+        ldd 查看程序需要调用的动态库，后面只能加上可执行文件
+        
+        1: 编译：
+                gcc -c fpic xxx.c
+        2: 连接
+                gcc -shared -olibxxx.so    xxx.o
+        3: 调用动态库
+                         3.1    gcc main.c  libxxx.so
+                    3.2    gcc main.c   -lxxx  -L.
+        
+动态库的加载：
+        1：找到动态库
+        2：加载动态库
+        3：映射到用户的内存空间
+        
+
+系统对动态库的查找规则
+        /lib  然后  /usr/lib   然后  环境变量LD＿LIBRARY_PATH指定的路径
+        
+                设置环境变量的方式：export LD_LIBRARY_PATH=.    
+
+        
+  工具make 的使用与makefile脚本的使用：
+                make 编译脚本解释
+                
+                脚本文件 makefile
+                基本语法：
+                        基本单位目标：target
+                        目标名：依赖目标       
+        例子：
+                        demo:tool.c
+                                  gcc -c -fpic tool.c
+                        link:tool.o
+                                  gcc -shared tool.o -olibtool.so
+                        main:main.c libtool.so
+                                  gcc main.c -ltool -L.
+  可简写为：
+                        demo:
+                                  gcc -c -fpic tool.c
+                                  gcc -shared tool.o -olibtool.so
+                        main:
+                                  gcc main.c -ltool -L.
+                        
+                
+                
+        脚本文件的使用方式 ：
+                make 目标名
+        默认规则；
+                make 不指定目标 的话，则会执行第一个目标 
+                不指定make文件，默认文件就是makefile（优先）／Makefile
+                
+
+I/O 基础：
+        1：内核对象
+                不允许访问内核设备以及内存的，但是可以通过内核 内核系统函数（内核提
+                供的一些相应 的API函数来进行访问）
+                内核对每一个内核对象进行编号 ID
+                访问内核对象的时候只能通过ID来进行访问操作
+                
+                        文件的操作
+                        怎样访问到一个文件 
+                        使用内核提供的API函数来传递一个文件，由系统打开文件，加载文件数据
+                        返回ID号
+                        使用函数传递ID 得到数据
+                        使用API函数传递ID号告诉系统关闭以及释放文件
+                        
+                ID：文件描述符  file description (fd)
+        
+        
+        文件I/O
+                函数名称：open  creat
+        头文件：        
+            #include <sys/types.h>
+       #include <sys/stat.h>
+       #include <fcntl.h>
+        函数原型：      
+       int open(const char *pathname,//路径名及文件名
+                                 int flags);//找开方式
+       int open(const char *pathname, 
+                                 int flags, 
+                                 mode_t mode);创建的文件权限
+       int creat(const char *pathname, 
+                                 mode_t mode);
+    open参数  int flag 打开/创建方式
+        O＿RDONLY（只读）  O＿WRONLY（只写） O＿RDWR（读写）
+         如果说是创建文件的话：O＿CREAT
+         还有一些可先方式：
+                创建：O＿EXCL （当创建的时候文件存在就直接报错，不存在则创建）
+                打开：O_APPEND
+                          O_TRUNC
+    
+    返回值：
+        如果说打开或者创建文件成功的话返回文件描述符，
+        失败的话返回-1
+        
+    关闭文件   close(int fd);
+    
+    umask:显示屏蔽权限位
+                可以使用它设置屏蔽权限位
+    
+ 
+ 课堂练习：
+        通过 命令行参数打开一个文件 ，如果该文件存在则打开，不存在则创建
+
+
+
+        fopen fwrite  freak 
+        open  write read
+        
+        函数名：read
+        
+        #include <unistd.h>
+        ssize_t read(int fd, //文件描述符
+                         void *buf,   //保存读取数据的缓冲区
+                         size_t count);  //读取的大小 
+                         
+        返回值：
+                函数返回值：
+                        函数返回值 >0 实际读取的数据 的个数
+                                          ＝0遇到文件结束符（EOF）
+                                          －1读取错误
+                
+                
+                                          
+        write 向指定文件中写数据        
+                #include <unistd.h>
+
+       ssize_t write(int fd,  
+                         const void *buf, //需要写入的数据 
+                         size_t count);
+        
+      返回值：
+        ＞0实际写入的数据
+        ＝0 什么都没写入
+        -1 写入数据
+        
+     
+     
+     函数名：lseek(功能类似于fseek)
+        #include <sys/types.h>
+       #include <unistd.h>
+
+       off_t lseek(int fildes,     //文件描述符 
+                        off_t offset,   //定位位置
+                         int whence);  //定位参照物
+                                whence: SEEK_SET
+                                                SEEK_CUR
+                                                SEEK_END
+        返回值：成功返回当前读取位置 的绝对 位置，否则－1
+        
+        pread=lseek+read
+        pwrite=lseek+write
+    
+    
+    函数名：pread
+
+       #include <unistd.h>
+
+       ssize_t pread(int fd,        
+                         void *buf, 
+                                  size_t count,     
+                                  off_t  offset);       移动多少个字节
+
+       ssize_t pwrite(int fd, const void *buf, size_t count,
+       off_t offset);
+
+
+
+        
+        普通文件是标识是f ，目录是d ， 管道文件是p
+
+
+文件操作
+        目录的的操作
+        目录的相关命令
+        cd   mkdir
+        目录相应的函数chdir切换目录
+                mkdir  rmdir   unlink删除目录
+        目录遍历函数
+           opendir打开目录文件
+           readdir读取目录   它的返回值是一个结构体，用于保存扫描的信息！
+                   struct dirent {
+              ino_t          d_ino;       /* inode number //节点个数
+              off_t          d_off;      /* offset to the next dirent */
+              unsigned short d_reclen;    /* length of this record */
+              unsigned char  d_type;      //文件类型
+              char           d_name[256];    //文件名称
+          };
+
+                
+                
+                closedir关闭目录
+                
+                seekdir (只针对目录与lseek差不多)用来设置参数dir目录流当前读取位置在调用
+                        readdir的时候就从新位置开始读取第二个参数 偏移量代表读取位置隔目录文件
+                        开始位置的偏移量
+                   seekdir - set the position of the next readdir()
+                                          call in the directory stream.
+
+                scandir 查找遍历目录
+                         #include <dirent.h>
+
+                 int scandir(const char *dir,    //目录的名称 
+                        struct dirent ***namelist, 
+                                                  //输出参数，返回目录有多少个子目录，文件等            
+                 int(*filter)(const struct dirent *),  
+                                                //回调函数，过滤目录，可以为NULL（不过滤），
+                         int(*compar)(const struct dirent **, const struct 
+                         dirent **));  // 用来排序返回目录的，如果为NULL，则不排序
+       
+                         返回值：
+                                ＞＝0 目录的个数
+                                ＝－1 目录查找失败
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+        strncmp它是比较两个字符串的前n位，不会比较整个字符串！
+        memcmp 是比较内存，它的参数是万有指针，可以比较任意类型
+                
+        %m 输出错误信息   include<error.h>
+                
+        ll -d  查看权限
+
+
+课堂练习：
+        给出一个带有子目录的文件夹，将所有的文件全部遍历出来，
+                
+
+
+
+
+另外一种文件操作的方式，直接通过内存来操作(文件映射)
+        文件映射：
+                将文件映射到虚拟内存 直接进行操作
+                1：打开文件，获取ID号
+                2：将文件映射到虚拟地址
+                3：直接操作虚拟地址
+                4：卸载虚拟地址
+                5：关闭文件
+                mmap   munmap
+
+        函数名 fstat： 获取文件的状态信息  
+                #include <sys/types.h>
+       #include <sys/stat.h>
+       #include <unistd.h>
+
+       int stat(const char *path, 
+                  struct stat *buf); 输出参数，（获取到的文件信息的结构体）
+       int fstat(int filedes,   //文件描述符
+                 struct stat *buf); // 获取的文件信息结构体
+       int lstat(const char *path, struct stat *buf);
+
+作业：使用以上的方式来获取文件信息，参照ll命令打印文件信息；
+                                
+
+内存映射操作文件实例：
+        使用文件映射的方式，往文件中写学生信息，要求文件是新建的
+        
+                分析：
+                如果说新创建的文件 ：大小使用fstat获取出来肯定是0，映射按照文件大小映射的话
+                肯定是不够再往内存后面添加数据 ，首先获取文件大小，然后获取需要写入到文件 之
+                中的数据的大小
+                在映射的时候就使用  文件大小＋数据大小  来映射空间 ，然后还需要对文件扩容
+                （否则 多出来的数据大小的空间，没有对应文件的部分，写入的数据对文件来说
+                就没有意义），
+                还需要对文件扩容使用函数ftruncate，写学生信息结构体到文件中             
+                                
+                                
+                #include <unistd.h>
+       #include <sys/types.h>
+
+       int truncate(const char *path, off_t length);
+       int ftruncate(int fd, off_t length);
+                
+                                
+
+
+进程
+        就是一个运行中的程序，一个运行中的程序可以是多个进程，（进程就是一个正在执行的程序实例）
+        
+        任务管理器 top
+        user 进程的属主；
+        pid  进程ID
+        ppid 父进程ID
+        %cpu
+        %mem
+        NI 进程的NICE 值 ，数值比较大，说明较少占用CPU时间
+        vsz  进程虚拟大小
+        TTY  终端ID
+        stat  进程状态
+                R  表示正在运行
+                S       该进程处于sleep
+                T       停止或者被追踪
+                W       进入内存交换（内核版本在2.6以后的w是无效的）
+                X       死掉的进程
+                Z       僵局进程
+                <       优先级高的进程
+                N       优先级低的进程
+                L       被锁定的进程
+                S       进程的领导者，（它下面有子进程）
+        
+
+ps查看进程的
+        -e显示里程的完整清单
+         t产生与特定终端练习的进程清单
+         u产生某个属于特定用户的一个进程清单
+         f 产生某个 进程的完整清单
+         
+        ps --help查看帮助文档
+进程的描述符
+        每个 进程都有一个非负表示的唯一进程ID
+        进程ID号是唯一的但是可以重用
+        获取进程ID：getpid 
+        getppid 获取父进程的ID（父进程里面有的子进程都有）      
+        getuid 获取 实际用户的ID
+        geteuid 获取有效用户的ID
+        getgid  获取 实际组的ID
+        getegid 获取有效组id
+
+怎样创建进程？
+        函数名：fork   （man 2 fork（第二章是Linux提供的一些api））
+        功能：创建一个新进程（子进程）调用一次fork会有两次返回值，一次是表示子进程是否创
+                        建成功，另一次是表示我自己的进程Id，也就是这个子进程的父进程的ID；
+        头文件：
+         #include <unistd.h>
+        pid_t fork(void);
+        返回值：
+                0       子进程（子进程是父进程的拷贝，父进程里面有的，子进程里面全都有！）
+                －1             失败
+                ＞0             父进程（这个值是子进程的ID）
+        
+
+        
+        ps top
+        kill 向进程发送信号，（可以杀死进程）
+                kill －s  信号  进程ID
+                kill  进程ID
+                kill －l  显示进程能够接受的所有信号；
+                        1－31  34－64  （可以用代号也可以用英文）
+                        
+        父子进程
+                父进程先结束，子进程不会立即结束，而是会等到子进程运行完毕后才会结束
+                父进程先结束，子进程会变成孤儿进程，会依附到根进程init
+
+                子进程先结束，子进程会变成僵尸进程，还是会依附在父进程下面，直到父进程完全结
+                束为止。
+                
+                孤儿进程，跟正常进程差别不大
+                僵局进程，僵局进程会占用系统进程节点，节点数是有上限的           
+
+        总结：
+                创建进程的方式：
+                        1：system  可以通过shell 命令来创建一个进程；它的返回值之中会包含它所
+                                                创建出来的这个进程的退出码，
+                                                注意：写程序的时候退出码一定不要超过255，如查需要返回负值
+                                                        (需谨慎)，
+                                                system返回值当中（创造出来的进程的返回值存放在8－15个字节
+                                                中），
+                                                system是一个阻塞函数
+                        2:  fork
+                        3:  popen;      创建一个子进程 并在父子进程之间建立一个管道
+                        4:  execl               本质上不会创建进程（只会在当前目录下查找）（用命令行上
+                                                        的参数替换程序）
+                                        int execl(const char *path,  //替换的程序 
+                                                         const  char  *arg,   //命令行参数
+                                                                ...);           //
+
+                                                
+                        5:  execlp（与前者的区别在于它会到系统目录下查找）
+                4和 5都 是会替换当前进程的代码空间中的代码数据函数本身是不创建新的进程
+        
+                
+                kill函数：
+                         #include <sys/types.h>
+            #include <signal.h>
+
+            int kill(pid_t pid, int sig);
+                返回值：
+                        0成功， －1失败。
+                
+                
+        作业：
+                查找素数
+                5000－10000
+                要求使用两个进程来操作
+                一个进程查找5000－7500
+                另外一部分查找7500－10000
+                把查找的素数存储到文件当中去（使用mmap的方式）
+                
+                
+                
+信号：
+        信号是软件中断，可以作为进程之间通信的一个机制
+        信号基本上是用于中断一个进程的正常的运行
+        ctrl+c也是一个信号，每个信号都是一个名字
+                
+                
+                信号的分类：
+                        1：实时的信号； 可靠信号      34－64
+                        2：非实时信号   不可靠信号        早期UNIX的信号机制的遗留产物 1－31，功能
+                                                                简单原始，信号可能会发生丢失！
+                                                        不可靠信号是不支持信号排队的，如果说向一个进程发送同一个不可
+                                                        靠信号多次，实际进程只处理一次！
+                                可靠信号：不会发生信号丢失，不管向一个进程发送多少次相同信号，进程都会依次
+                                                处理！
+                                                
+                
+                信号的作用：
+                                进程之间的通信（父子进程之间必须通信），通知其他进程响应（进程之间通信的
+                                                                的一个机制）
+                                                                一般的信号，几乎是在接受到信号之后，就会立即结束进程，
+                                                                如果说不想直接结束就需要对传递来的信号做相应的操作
+                                                                （需要调用相应的信号处理函数）
+                                                        
+                
+                
+                发送信号使用：kill
+                                具体用法：例：kill  －14   进程id 
+                        使用KIll的注意事项：
+                                使用kill发送信号的时候
+                                pid：
+                                        ＞0  发送信号到指定进程
+                                        ＝0  发送信号到该进程的所在进程组的所有进程
+                                        －1  发送信号给所有的进程，init除外；
+                                        ＜0  发送给指定的进程组（组ID＝绝对值）
+                                
+                发送信号和处理信号的方法：
+                                处理信号：signal
+                                作用：当外部进程发送信号给我这个进程，然后我就按照sigal里面去执行！
+                        函数名：signal－－处理信号，或者说绑定信号
+                               
+                                
+                                #include <signal.h>
+
+                typedef void (*sighandler_t)(int);
+
+                sighandler_t signal(int signum,   //需要绑定的信号
+                                                         sighandler_t handler);  //处理信号的回调函数
+                                                         
+                        
+                                
+                信号的处理：
+                        即便是进程收到信号，系统会判别信号是可靠信号还是不可靠的，
+        
+        
+        映射 map_shared: 映射到同一个物理内存
+                map_private: 映射到不同的物理内存
+                        两个进程之间文件描述符指向的是同一个文件内核对象
+        
+        
+        
+        
+        进程的基本控制：
+                进程常见的控制函数
+                        sleep  usleep
+                        pause    
+        
+        函数 pause
+          #include <unistd.h>
+
+     int pause(void);
+
+
+        信号的发送与绑定：kill   signal
+        信号的应用：
+                1：延时器：
+                        sigalrm  14
+                        信号发出函数alarm（）
+                例：
+                        signal(14, handle);
+                        alarm(5);//秒数，在多少秒之后，给调用它的进程发送一个14号信号；
+                        
+                2：定时器
+                        一种是隔多少秒之后再响一次
+                        一种是到某个时间之后再响，
+        
+                子进程发送信号给父进程是17号信号！子进程是将父进程拷贝一份给自己，所以父进程有的子进
+                程都有，
+                子进程结束的时候，会自动发送一个17号信号给父进程！
+                
+                
+                函数 名：setitimer
+                
+                #include <sys/time.h>
+
+       int setitimer(int which,  //计时方式
+                                 const struct itimerval *value,//定时器的时间参数
+                     struct itimerval *ovalue);   //返回原来设置的定时器如果为
+                                                                                                NULL则不返回
+                                        
+         struct itimerval {
+                struct timeval it_interval; /* next value */间隔的时间
+                struct timeval it_value;    /* current value */延时的时间
+            };
+            struct timeval {
+                long tv_sec;                /* seconds */ 秒
+                long tv_usec;               /* microseconds */ 毫秒
+            };
+                                                                        
+
+        
+        信号屏蔽
+         sigprocmask  -  examine  and  change blocked
+
+       #include <signal.h>
+
+       int  sigprocmask(int  how,  //操作的方式
+                  const   sigset_t*set,//（sigset_t是信号的集合）操作的信号集合
+                   sigset_t *oldset);   //返回原来上一次操作的信号集合
+                   
+                   
+      信号集合操作系列函数：
+        #include <signal.h>
+                //清空信号集合的函数
+       int sigemptyset(sigset_t *set);
+                //将所有信号添加到信号集合
+       int sigfillset(sigset_t *set);
+                //添加单个信号到信号集合
+       int sigaddset(sigset_t *set, int signum);
+                //从信号集合中删除单独的信号
+       int sigdelset(sigset_t *set, int signum);
+                //判断信号是否在集合当中
+       int  sigismember(const  sigset_t  *set,  int signum);
+       
+       
+     信号屏蔽切换：      
+       #include <signal.h>
+           int sigsuspend(const sigset_t *mask);//屏蔽新的信号使原来的信
+                                （pause的升级版）                       号失效！进程同时也会暂停
+                   sigsuspend  设置新的屏蔽信号，保存旧的屏蔽信号，当sigsuspend返回的时候，
+                                恢复旧的屏蔽信号   
+                        sigsuspend当执行这个函数之后，进程就会暂停
+                        等待没有屏蔽的信号的唤醒，当接收到没有被屏蔽的信号之后，就把现在信号集合还原
+                        成原来的屏蔽的信号，然后调用 处理函数，处理函数返回后，sigsuspend才会返回
+
+        查询被屏蔽的信号 int sigpending(sigset_t *set)
+                查询当前屏蔽的所有信号，然后通过参数返回
+                把查询到的当前所有的屏蔽信号保存到参数里面去
+                只有使用的时候才能查寻到？？？？？？
+
+
+
+        家庭作业；
+                写一个程序，在终端里面，不停的打印三位随机数，当接受到信号就停下，
+                当再一次发送信号给程序的时候，程序就再一次不停的打印三位随机数！（系统时间作为
+                随机数的种子）  
+        
+第六天：
+
+        
+        sigsuspend pause 都会被 信号中断（仅仅只是这个函数中断，而不是程序中的其它代码）
+        
+        最新版本的信号发送与处理
+                sigqueue    sigaction
+                kill        signal(是这两个函数的升级版)
+        
+
+ 函数 sigaction:
+         
+         #include <signal.h>
+    int  sigaction(int  signum,  //被处理的信号
+                                const  struct sigaction *act, －－处理函数以及参数信息
+                                struct sigaction *oldact);－－返回原来的处理函数的结果
+
+        
+        
+          struct sigaction {
+                  void (*sa_handler)(int);       －－回调函数，信号处理函数
+                  void (*sa_sigaction)(int, siginfo_t *, void *);－－回调函数
+                  sigset_t sa_mask;         －－屏蔽信号
+                  int sa_flags;              －－设置信号处理的其它操作
+                  void (*sa_restorer)(void);    －－保留成员
+              }
+
+        
+        
+        函数：sigqueue
+       #include <signal.h>
+
+       int sigqueue(pid_t  pid,--接收信号的进程ID
+                                        int  sig, －－需要发送的信号
+                  const union sigval value);－－需要发送的数据
+    
+    
+    
+                                   union sigval {
+                                                  int   sival_int;
+                                                void *sival_ptr;
+                                                                 };
+  
+    
+补充：联合体与结构体的区别：
+        union 它所有的内容都共用一个空间，它里面最大成员的空间，所以每次只能一个成员使用！
+
+        
+        
+                
+        IPC(进程间通信)
+                1：基于文件
+                          无序文件
+                          有序的文件：管道文件(有名/匿名)     套接字文件（socket）
+                2: 基于内存
+                          有序内存：共享队列
+                          无序内存：匿名内存   共享内存
+                进程之间的同步：信号量，信号灯
+                
+                
+        
+        基于普通文件的IPC
+                IP的技术提出的应用背景
+                        进程之间需要同步处理
+                        进程之间的同步需要通信
+                        普通文件就是最基本的通信手段
+                        普通文件IPC技术遇到问题
+                                        一个进程在改变文件，另外进程无法感知的，
+                                        解决方案：做一个特殊的文件：管道文件
+
+
+
+        管道文件：
+                1: 创建有名管道，使用函数mkfifo()
+                2：打开管道，
+                3：操作管道文件（写入数据，读取数据）
+                4：关闭管道
+                5：删除管道
+                
+                A程序 
+                        建立管道
+                        打开管道
+                        写入数据
+                        关闭管道
+                        删除管道
+                B程序
+                        打开管道
+                        读取数据
+                        关闭管道
+
+        函数：mkfifo                    --创建一个管道文件
+                  #include <sys/types.h>
+         #include <sys/stat.h>
+
+         int mkfifo(const char *pathname, －－要创建的管道文件名
+                                        mode_t mode);－－创建文件的权限
+                
+                返回值：成功 0
+                                失败－1
+
+                
+                
+        总结：（有名管道）
+                如果 说管道文件没有数据，read会阻塞
+                read读取数据后，管道文件里面的数据会被删除，它的数据是有序的
+                打开的描述符可以读写（也叫双工），管道文件关闭之后数据不保存
+                管道的数据存储在内核缓冲区中
+                
+        
+        匿名管道：（单工）(用于父子进程中)
+                管道的名字仅仅是内核辨识是否返回的同一个描述符的标志而己；（只要程序开始
+                        运行 了，运行过程中删除都可以！）当管道的名字失去管道作用的时候，实际、
+                        上是可以不要名字的！
+                        
+                匿名管道只能是在父子进程之间使用！
+                
+                在父子进程之间打开文件描述符之后创建进程
+                父子进程里面都有描述符（父进程有的子进程都 有）,所以管道的名字就没有价值
+                所以在父子进程之间引入 一个没有名字的管道： 匿名管道 
+                
+                
+        创建一个匿名管道
+                使用的函数pipe
+                管道文件里面的数据之间没有边界!                 
+
+        函数 pipe               
+                #include <unistd.h>
+                
+       int pipe(int filedes[2]);
+                函数的参数 是用来返回两个描述符的
+                        fd[0]只读   fd［1］只写
+        
+        一个进程里面只能操作一个描述符，多余的必须关闭！
+        
+        
+        综合练习：
+                使用多进程编程  管道文件
+                建立两个子进程
+                一个负责计算1－5000的素数 
+                一个负责5001－10000
+                父进程负责存储到文件
+        
+        
+
+基于文件的通信：
+        1：普通文件（io/mmap）
+        2：有名管道文件
+        3：匿名管道
+        4：socket
+
+基于内存的通信：
+        1：一组基于内存的工具
+        
+        ipcs
+                配置选项：
+                        －m shared_mem 共享内存
+                        －q:messages 消息队列
+                        -s:semaphore 信号数组 
+                        －a：all（default） 默认全部显示
+
+        ipcrm －m  相应的id   （如果在程序中没有删除，就要在命令行手动删除)
+        
+        普通的父子进程之间匿名共享映射
+        内核的共享内存
+内核共享内存的编程模型
+        1：创建共享内存（shmget）(创建或者打开)
+        2：挂载（shmat）(把相应的共享内存ID映射成虚拟地址)
+        3：使用虚拟地址访问共享内存
+        4：卸载虚拟地址 shmdt
+        5：删除共享内存 shctl
+        
+        
+        函数名以及功能：shmget  －－创建共享内存
+            #include <sys/ipc.h>
+
+       #include <sys/shm.h>
+
+       int shmget(key_t key,    // 创建共享内存的唯一标识 
+                        size_t size,  // 共享内存的大小 
+                   int shm-flg);  // 方式｜权限         IPC＿CREAT｜IPC＿EXCL
+                                                                                IPC＿CREAT｜IPC＿EXCL｜0777
+       
+       返回值：成功返回共享 内存的id  失败返回－1
+                为什么需要key：
+                        约定创建与访问的是同一个共享内存
+                        
+       
+       
+   shmat shmdt ---操作共享内存  
+       #include <sys/types.h>
+       #include <sys/shm.h>
+
+       void  *shmat(int shmid,  //共享内存ID
+                         const void *shmaddr,   //系统指定首地址
+                               int shmflg);   //建议为0，挂载方式 可以使用IPC＿RDONLY
+                                       
+
+       int shmdt(const void *shmaddr);
+
+
+函数名：shmctl--共享内存控制
+        
+                 #include <sys/ipc.h> #include <sys/shm.h>
+
+               int shmctl(int shmid,   //ID
+                                int cmd,     //操作方式：一共有三种
+                                struct shmid_ds *buf);  //共享内存属性
+                                三种操作：
+                                        IPC＿STAT 获取共享内存的当前属性，也需要使用到第三个参数
+                                        （输出参数用来带回 获取到的属性）
+                                        IPC＿SET 设置共享内存属性的（如果用了这个选项需要使用第三）
+                                        个结构体参数是输入参数用来保存需要设置的内容）
+                                                IPC＿RMID删除共享内存
+
+
+共享队列－－消息队列
+        编程模型：
+                1：创建共享队列／得到共享队列 msgget
+                2：使用队列   发送消息msgsnd   接收消息msgrecy
+                3：删除队列  msgctl     
+        
+函数名：msgget--获取一个消息队列的ID
+
+       #include <sys/types.h>
+       #include <sys/ipc.h>
+       #include <sys/msg.h>
+
+       int msgget(key_t key,  //
+                  int msgflg);  //
+
+
+函数名：msgsnd
+                #include <sys/types.h>
+       #include <sys/ipc.h>
+       #include <sys/msg.h>
+
+       int  msgsnd(int  msqid, //ID
+         const  void  *msgp,    发送的消息  （有固定的格式）
+       size_t msgsz,   消息的长度（不包含类型的4 个字节）
+        int msgflg);    发送消息的方式 建议为0；
+        返回值：－1失败 
+                        0 成功
+                发送消息的固定格式：
+                                前4字节：标识消息的类型
+                                后面若干字节：消息的内容
+                
+                
+
+       ssize_t msgrcv(int msqid,     消息队列ID
+                            void *msgp,         存放获取到的消息
+                            size_t msgsz,       获取多少个字节
+                            long msgtyp,  消息类型
+                            int msgflg);        获取的方式
+
+        
+          struct msgbuf {
+                 long mtype;      /*  message type,must be > 0 */
+                                                                消息类型必须＞0
+                 char mtext[1];  /* message data */   消息文本
+                        };
+
+        
+
+
+        基于socket文件的IPC通信:
+        
+                socket文件的通信方式很重要，网络都是采用这种通信方式
+                有两种模型
+                                1：对等模型   （对等模型数据类型只能用报文）
+                                  A：
+                                        1.1: 创建套接字文件socket;
+                                        1.2: 构建地址
+                                        1.3: 绑定地址到套接字文件    bind
+                                        1.4: 使用套接字文件 （发送或者接受数据）
+                                                        write/read   recv/send   sendto/recvfrom
+                                        1.5: 关闭套接字文件
+                                  B
+                                        1.1：建立socket   函数：socket
+                                        1.2:  构建地址
+                                        1.3:  连接到目标   connect
+                                        1.4:  发送或者接受数据
+                                                                write/read   recv/send   sendto/recvfrom
+                                        1.5:  关闭close
+                                
+                                
+                函数名：socket －－创建一个套接字文件
+                          #include <sys/types.h>
+                  #include <sys/socket.h>
+
+                 int socket(int domain,   //地址族类型  AF＿UNIX（AF＿LOCAL）
+                                                                                                         AF＿INET
+                        int type, 
+                                          //支持的数据格式，流SOCK＿STRESM 数据报文 SOCK＿DGRAM
+                        int  protocol);  //支持的协议，建议为0（由系统默认分配）
+                         返回值：成功   返回文件描述符（新创建的套接字文件）
+                                        失败   返回－1；
+                                                                        
+                                
+                                
+                                函数名：bind---绑定地址跟套接字文件
+                         #include <sys/types.h>
+                         #include <sys/socket.h>
+
+                         int  bind(int  sockfd,  //套接字文件描述符
+                                                const struct sockaddr  //绑定的地址
+                                        *my_addr,   //地址的长度
+                                          socklen_t addrlen);
+                                        返回值：成功 0
+                                        失败 －1
+                        
+                                
+
+
+                        地址结构体：
+                                struct sockaddr_in{
+                                        sa_family_t   sin_family;    //地址族协议
+                                        in_port_t     sin_port;         //端口号
+                                        struct in_addr    sin_addr;   //IPV4地址
+                                                                        };
+                
+                
+                                        struct in_addr{
+                                                        int_addr_t    s_addr;   //ip地址
+                                                                }
+        
+        
+                                struct sockaddr_un {
+                                                sa_family_t     sun_family;     /* AF_UNIX */
+                                                char   sun_path[UNIX_PATH_MAX]; /* pathname */
+                                                                        };
+
+        
+                        
+                2：C/S 编程模型  （C/S模型数据模式只能用流）  
+                                Server
+                                        1: 建立socket
+                                        2: 构建地址
+                                        3：bind绑定
+                                        4：监听 listen
+                                        5：接收 accept
+                                        6：处理数据  read   write
+                                        7：关闭套接字文件
+                                Client
+                                        1: 建立socket
+                                        2: 建立连接 connect
+                                        3：处理数据
+                                        4：关闭
+        
+        
+        两种模型总结：
+                1：两种模型都能用于本地及网络数据的交换！socket参数但用了AF_UNIX 就只能用于本地
+                2：对等模型数据类型只能用报文，C/S模型数据模式只能用流！
+                3: socket的两种地址簇协议  AF_INET对应的头文件为 #include<netinet/in.h>
+                                                                   AF_UNIX对应的头文件为 #include<linux/un.h>
+        
+        
+
+                
+        课堂练习：
+                1：把C/S变成IP方式的方式（之前是文件的方式！）          
+                2：思考怎样发送文件
+                        1.0:  在客户端直接发送文件名
+                                服务器端接收到文件名之后，使用文件名创建文件
+        
+        
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+        
+                
+        进程同步（为了避免两个进程同时操作一个文件，造成数据混乱！）    
+                信号量（同步）也叫信号灯，信号数组
+                信号量是共享内存数组（整数数组），根据需要定义指定长度的数组,信号量就是根据数组中
+                的值，来决定是阻塞还是解除阻塞
+                                
+                以前是pause/sleep＋信号，来实现这样的功能！
+                
+编程模型：
+        1：创建或者得到信号量  semget
+        2：初始化信号量中指定下标的值   semctl
+        3：根据信号量里面的值来决定阻塞还是解除阻塞   semop
+        4：删除信号量   semctl
+                
+                
+                
+        函数--semget
+                        
+                         #include <sys/types.h>
+         #include <sys/ipc.h>
+                 #include <sys/sem.h>
+
+           int  semget ----获取信号量的ID
+                                (key_t  key, 
+                                 int nsems,   信号量数组的个数
+                                 int semflg);  信号量的创建标记
+                                                        创建    //IPC＿CREAT｜IPC＿EXCL｜0777
+                                                        打开    // 若只需要打开  为0即可
+
+        函数：semctl
+
+                #include <sys/types.h>
+       #include <sys/ipc.h>
+       #include <sys/sem.h>
+
+       int semctl(int semid,      //信号量的ID
+                        int semnum,       //信号量的下标
+                            int cmd,   //操作方式，使用IPC＿RMDI 第二个参数是被忽略的
+                                ...);   如果说想要获取信号量的相关信息，就需要使用到第四个参数
+                                                第四个参数 union  semun arg
+
+                 union semun {
+               int              val;    /* Value for SETVAL */
+               struct semid_ds *buf;    /* Buffer for IPC_STAT, IPC_SET */
+               unsigned short  *array;  /* Array for GETALL, SETALL */
+               struct seminfo  *__buf;  /* Buffer for IPC_INFO
+                                           (Linux specific) */
+                                                };
+
+        
+        函数：semop     
+                
+                #include <sys/types.h>
+       #include <sys/ipc.h>
+       #include <sys/sem.h>
+
+       int  semop(int  semid,    //ID
+                        struct sembuf *sops,  //对信号量的操作，
+                        unsigned nsops);//第二个参数的个数 
+
+        操作结构体：                    
+                struct sembuf{
+
+           unsigned short sem_num;  /* semaphore number */  下标
+           short          sem_op;   /* semaphore operation */  操作
+           short          sem_flg;  /* operation flags */  操作方式 建议为0
+                                                }
+
+        信号量里面的值为无符号短整型（＞＝0）
+                sem_op:
+                        +:  执行＋操作
+                        －：够减，则semop马上返回，不够减就阻塞
+                        0： 用来判断信号量是否大于0；大于0就阻塞，直到为0为止
+                
+        进程控制操作搭配：
+                ＋  －  配合
+                0 （用于阻塞）
+                
+                
+                
+                
+        
+网络：（本质上也是进程间通信）
+        基础 IP （本质上4字节的整数）   
+                基本上所有地方都是采用socket模型  
+                识别主机：IP地址
+                识别进程：端口号（无符号整型）
+        
+        IP地址的表示形式：
+                使用字符串：“192. 168. 1. 1” 数点字符串（外部表示）
+                                         内部表示：4字节整数
+                数点表示法－－结构体里面的几个元素组成字符串（分段表示，每段之间用 . 来表示）
+
+        IP地址的结构体
+                
+                struct socketaddr_in 
+                {
+                        int sin_family;
+                        in_port_t sin_port;
+                        struct in_addr sin_addr;
+                }
+                
+                
+                struct in_addr
+                {
+                        in_addr_t  s_addr;
+                }
+                
+                连接点：endpoint
+                ip地址表示“127. 0. 0. 1”
+                整数的表示：in_addr_t
+                结构体表示struct in_addr;
+                
+        
+         struct hostent *gethostbyname(const char *name);
+
+         struct hostent {
+                      char    *h_name;        /* official name of host */
+                      char    **h_aliases;    /* alias list */
+                      int     h_addrtype;     /* host address type */
+                      int     h_length;       /* length of address */
+                      char    **h_addr_list;  /* list of addresses */
+                          }
+
+        h_addr_list[][]  为二维数组，用于存储IP地址的四段，h_addr_list[0][1] 第一段
+        打印的时候用 %hhu 去打印
+        
+        IP地址的转换：
+                inet_addr  //把字符串转换成整数（网络字节序）
+                inet_aton    //把字符串转换成结构体类型struct in_addr（网络字节序）
+                inet_network  //把字符串转换成整数（本地字节序）
+                inet_ntoa               //把结构体转换成字符串
+                
+                htons   ntohs
+                hton    ntohl
+                
+         
+        计算机系统中的网络配置 /etc/hosts 文件之中 配置ip 域名  主机名
+        
+        /etc/protocols文件 配置系统支持的协议
+        /etc/service文件 配置服务
+        
+        用于获取网络主机的相关信息
+                gethostbyname
+                gethostbyaddr
+        打开获取本地主机
+                sethostent(); //打开主机配置数据文件
+                gethostent(); //获取主机相关信息
+                endhostent(); //关闭
+
+
+
+TCP/UDP编程
+        对等模型：AF_INET+SOCK_DRGRAM   (UDP)
+        C/S模型：AF_INET+SOCK_STREAM    (TCP)
+        
+网络编程：
+        IOS七层模型： 
+                物理层  
+                数据链路层   （决定物理层数据怎样传输） 
+                网络层     （IP层，决定数据的传输方式）
+                传输层          （决定数据传输结果）
+                
+                会话层           （数据传递的含义）
+                表示层
+                应用层
+
+UDP编程数据特点：
+        1：UDP采用对等模型 SOCK＿DGRAM
+
+
+        函数名：send ，sendto 发送消息（socket）
+                
+            #include <sys/types.h>
+       #include <sys/socket.h>
+
+       ssize_t send
+                        (int s,     //套接字文件描述符
+                                 const void *buf, //要发送的数据
+                                  size_t len,  //发送数据的长度
+                                 int flags);  //发送的方式（若为0，就与write一样了）
+      
+      
+       ssize_t  sendto   （可以将自己的IP地址发送出去，让主机知道是谁发送的）
+                                 (int  s,   //套接字文件描述符
+                                 const  void  *buf,
+                                 size_t len, 
+                        int flags, 
+                        const  struct  sockaddr *to,  
+                                                //ip地址（消息要发送到的ip地址）
+                                 socklen_t tolen);  //ip地址长度
+
+
+
+                #include <sys/types.h>
+       #include <sys/socket.h>
+
+       ssize_t recv(int s, void *buf, size_t len, int flags);
+
+       ssize_t recvfrom(int s, void *buf, size_t len, int flags,
+                        struct sockaddr *from, socklen_t *fromlen);
+
+
+        
+                sendto = connect+send  (用了sendto就可以不用connect)
+                recvfrom 的作用并不是像sendto 不能专门从指定IP接收  （从任意IP接收数据，返回
+                                        发送数据者IP）
+
+                为什么要绑定bind 
+                        绑定的主要的目的，是告诉网络发送数据的目标
+                发送方只需要知道IP和端口号就可以直接发送
+        
+TCP编程模型：
+        IBM Rose  代码生成工具
+        
+
+案例：
+        使用TCP发送数据接收文件
+        要求在接收固定长或者不固定长数据的时候使用  使用MSG＿WAITALL
+        TCP 的特点：
+                数据传输精确，TCP协议保证数据完全正确，描述符双工
+
+课堂练习：
+        1：使用TCP C/S模型 从客户端给服务器端发送数据包，按照相关的协议来发送
+                           协议1：包头12个字节 14字节协议ID   5个字节，用户名    15字节密码 
+                                                        4字节的整型（1：注册，2：登陆）
+                                        接收到 1，把用户名以及密码写入到内存中，用一个链表来存储
+                                        接收到 2：用接收到的账号跟密码在链表当中去对比如果说账号密码匹配则登
+                                                        陆成功，如果没找到则用户不存在
+                                协议2： 12字节的包头，4字节的协议ID  15字节的用户名，4字节的登陆结果
+                                                1，表示用户不存在，2表示密码不正确
+                                协议3； 用于注册的协议包                                        
+                                                12字节包头  4字节的协议ID  15字节用户名   4字节注册结果
+                                                1；成功 2失败
+
+
+
+        2：tcp
+                多任务模型 使用多进程方式，完成聊天程序
+                作业完善：有客户端创建进程，负责接收消息
+        
+                
+        
+        socket建立的服务器的文件描述符缓冲
+        bind把Ip地址 端口号  设置到文件描述符中去
+        listen 负责根据客户连接的不同ip  端口 负责生成对应的子文件描述符
+
+        accept 一旦listen有新的描述符好产生就会返加，否则阻塞
+
+
+
+
+
+
+第十二天
+                
+                shell  就是在不断地fork与execl
+                
+                当出现了（） * ［］这三个标记的时候，就不能只看一个标记来判断了，要根据优先级
+                优先级最大的那这个变量就是什么！
+                （）优先级大于［］，  []优先级大于*  
+                
+                
+                man查看一些新的函数的时候，一些新函数的参数要传入一个自己指定的指针数组，如下：
+                char* XXX[]={"df","gf","df",NULL};  之所以最后要传一个NULL，是为了标示它
+                已经到了最后！ 
+                
+
+                指针是指针，数组是数组，唯一个地方看起来是数组其实是指针，就是在传入参数的时候
+                void  do_it ( char argv[] )   这个时时候char argv[] 其实是char* argv
+                
+                
+                        
+                cmd1 | cmd2  把第一条命令作为第二条命令的输入
+                
+                文件描述符有一个数值最小的分配原则!
+                屏幕文件的描述符是 1，标准输出的默认关联是 1 
+                
+                dup2(fd,1) 把文件的描述符改变为1；
+                execlp("文件名"，"命令", 命令参数)；结束当前的进程，来执行它的命令！
+                popen 打开的一个进程（进程也是一个文件），让它去执行，把执行结果输出到管道！
+                popen 创建一个子进程，执行命令，将结果保存到管道文件，然后返回一个管道文件的FILE*
+
+
+
+                FILE*fdopen    //把fd转换成FILE*
+                int fileno     //把FILE*转换成fd
+                
+                
+                用read读取一个普通文件用read的返回值来判断是否读到文件尾！
+
+                
+                socket 与管道文件用完了要记得关闭，否则消耗系统资源！
+                
+                tcp发送的次数与接受的次数是没有对应关系！发一次，有可能要接受两次才完成！
+                这是因为tcp的数据是没有边界的！  所以在用tcp协议的时候，一般是先把发送数据的
+                长度先发过去[对方接受也有可能不能一次接收完这个整数，但会一直接收直到接受到要求的长
+                度]，再发送数据！     （但是在内核2.2以上的版本中的recv函数的第四个参数
+                MSG_WAITALL就是专门解决这个问题的！直接去使用，如果内核版本低了编译时就不能通
+                过！）注：只有接收才会有这种问题，发送没有这种问题！
+                
+                
+                I/0操作相对机算机来说是非常慢的，键盘，硬盘文件获取等等！（输入输出是针对计算机
+                内存来说！最高效的是都在内存中完成！）
+                
+                
+                cast to 强制类型转换
+                
+                EOF不是文件的内容，文件的内容是FF，强制转换成整型后变成了FFFFFFFF  ,这才是EOF
+
+                信号量是用来控制进程的！
+                
+                http协议是基于tcp协议的，就是在它的末尾加上一个结束标志！
+                
+                
+第十三天：
+                fseek  与  lseek 不能用于管道文件和socket!（虽然归类为文件，也支持文件的大部分
+                文件操作，但本质上并不是文件！）
+                有名管道是没有大小的为0；
+                对于管道文件和socket判断是否读到末尾的方法只有一个：读取函数读取n个字节的保
+                存到buf，当strlen(buf)为0时，则读取完了 ；
+                （它们不能用读取100个字节，如果返回值小于100则读完，这种方法不适用于管道文件
+                        和socket!）
+                
+                
+                
+                fread/fwrite     write/read     读写管道文件与socket文件都存在一个问题：
+                指定读写多少个字节的内容，但它会经常不能保证这么多（但也不会一个字节都没读为0），
+                二者断是否读到末尾的方法：
+                fread/fwrite 
+                读取函数读取n个字节的保存到buf，当strlen(buf)为0时，则读取完了 ；
+                write/read
+                可以用返回值等于0，来判断！
+                而send/recv能保证读写数据字节正确
+                                
+                
+                读取管道文件和socket的内容保存到一个定义的字符数组（不保存到文件是为了效率，
+                不采用malloc与realloc是考虑到如果发送的数据太大，当心会把整个内存条吃完！），
+                如果内容超出了定义的大小，就分多次发送！ 
+                
+                
+                malloc之后realloc开辟的空间一定也是连续的（还是数组），如果realloc时后面没有
+                足够大的空间那么就重新找一块地方，把之前的部分复制过来，再在它的
+                尾部realloc一个空间！
+                
+                用select可以节约一个接收数据的等待时间，体现在：accept之后，我们一般是用读取函数
+                去直接读取，加上一个select就是判断有没有数据发过来，有的话才去接收！
+                
+                
+                客户端接收数据并不需要像服务端那样 要 绑定，监听 ，直接接收就可以了！
+                
+                管道文件和socket文件和现实中的水管一样，两端都可以随时发送数据和接收数据的，
+                执行之前不需要任何条件，只要二者不同时执行即可！
+                
+                
+                accept执行后到了下面的while，如果while不退出，那么就不能再accept
+                
+                
+                srv_sock始终只有一个，但可以有多个由accept创建多个cli_sock,但收发数据的时候
+                只以是一对一；
+                
+                
+                
+                p++移动多少个字节取决于p对应存储数据的类型
+                int arr[10]             arr++   偏移4个字节     (&arr)++  偏移40个字节
+                分析：
+                arr= int* p;      p++  偏移4个字节     (&p)++ 偏移40个字节
+                
+                &arr=int(*p)[10];                       p++     偏移40个字节
+                
+                
+                
+                
+                对于计算机来说，没有同时的概念！一定会有先后！
+                
+                全局变量的范围最大也是在进程内！
+                
+                
+
+                fgets(buf,12,stdin)    
+                fgets()读取指定个数的字符并加上'\0' (回车也会读进去)，但最多读取一行（遇到回车会停止）！
+                它会起到清空输入流的作用，可以用它代替scanf; 
+                        
+
+                goto 只能在一个函数范围内跳！而且最好只往下跳，不要往上跳（这是想用goto实现循环）！
+                因为那样那样对程序员要求很高！总之，最好不要用goto实现循环！
+
+
+
+                ?? FILE*型也叫流，标准输入文件的使用方式有两种：FILE*型 和 fd型                 
+                标准输入流是指以FILE*型方式使用的！
+                （标准输入文件默认情况下，已经以这两种方式打开了，所以我们直接使用就行了！）    
+        
+                流就会有缓冲区：有三种缓冲方式，无缓冲，行缓冲，满缓冲；flush(out)就是在没有满足输出
+                条件的时候，强行让他输出，否则它会留在缓冲区中，不输出（在程序结束之前才给你输出）！
+
+
+                流是一个连续的字节序列，文件和目录 本身都是流，FILE*是打开流之后返回的指针;
+
+                目录就是文件，它里面保存的数据就是一个个的dirent结构体,  这个结构体记录了  
+                i节点 和  文件名（无后缀名，这样就不用管是目录还是文件了，可以这样做是因为目
+                录本身对于Linux来说与一般的文件无异，只不过对用户来说不一样），i节点可以定位
+                文件在硬盘上的具体位置，所以有了 文件名和i节点 就可以精准地定位一个文件的位置！
+
+
+
+
+                哪些情况下函数参数要传入指针：
+                        1：要传好多类型一致或相关的参数，把它变成数组或结构体，传入首地址；
+                        2: 参数传值！
+        
+
+                文件描述符为什么要创建，文件描述符是只有在打开的情况下才可能产生！
+
+                
+                全局变量一般用在这种情况下：这个变量的值一般不会改变！
+                
+                
+                if(i=100 && i=10)  赋值运算判断方法：赋值之后看i的值！
+                
+                
+                
+                进程池，线程池的socket的版本可以解决select版本在接收数据的过程中，
+                不能有新的用户接入的问题！
+
+        
+                用堆上面的变量完全可以代替全局变量，具体做法就是：用一个函数去实现，返回它的地址！
+                然后将链表所有要重复用到的功能全部封装成函数，只需要调用这些函数和传入要处理的数据！
+
+
+                用到链表的时候最好把链表和算法内容完全分开来做，这样交叉越少，越容易排错，
+                所以创建链表的时候，尽量把所有的功能全都封装进去，这样的话至少要有两个能：
+                头节点创建函数（便于别人创建头节点和创建多个头节点＜有时候可能需要多个链表＞
+                和接收新数据的入口！）
+                
+                
+                管道文件就是一个文件，匿名管道也是一个文件（只不过父子进程一样就不要名字了），这个管道，
+                一般是用来父子进程间通信，其实它的通信原理就是两个进程，都对进程外的同一个文件操作（单工）；
+                (有名管道是双工) 所以一个进程也可以对它操作，一端发, 一端收！
+
+                
+                有名管道计算它的大小是0，那是因为系统只给有名管道分配了i节点，而没有给它分配空间（硬盘上的），
+                它的空间只是在内存中，不在硬盘上，有了i节点之后，就可以有文件的输入输出缓冲区，就可以双工，
+                而匿名管道只分配了内存空间，只能单工！
+
+
+
+                I/O外围操作的效率很低， 并不是只要是文件操作效率就很低，管道文件并不会降低效率！
+
+
+                
+                
+                char *p="hello";
+                char a[]="hello";
+                第一个是字符串常量，p是这个常量的地址，由于字符串常量保存的特殊性，所以是不能修改的
+                        也就是p可以被修改，p指向的内容不可以修改！
+                第二个是把内容放到数组里面，可以修改！
+
+                
+
+
+
+项目问题：       man socket   why not is AF_INET?
+                 man bind    why (struct sockaddr*)&addr
+                  
+                  int execlp(const char *file, const char *arg, ...);
+                        
+                
+                数组名就是指针，就可以有指针的用法，buf+5,buf++, 都是可以的！
+                字符数组每个元素都有地址，都是通过首地址得来，也可以这样用
+                printf("%s\n",&buf[10])
+        
+                access  (" /bin/1234", F_OK )
+                basename
+                 
+                 
+                有名管道为什么是双工，而匿名不是；
+                管道文件和一般的文件有什么区别，为什么I/O操作效率低，而管道文件不会！
+
+
+
+               ctrl+l   清屏
+
+
+
+
+vim 常用命令：
+删除一行dd
+               删除n行 ndd
+                       d1G(大范围就用大G）
+                       dG  
+               （把d换成y就是复制）
+               
+               
+               p粘贴(自动粘贴到光标的下一行)
+                    
+        
+               定位到哪一行： gg   第一行
+                              G  最后一行
+                              750gg   到750行（行输数字光标才不会已经跑了）
+        
+               可视化选择：（这种模式下，复制删除都只用按一个键！）
+                            按V  然后上下左右选择，这样就不用数行数，可以进行
+                            复制，删除，缩进等操作！
+                            ctrl+v 就是区块操作，选择后只能按一个y，来复制！
+
+              
+              下面的一行接到本行之后，用J 
+              行首0
+              行尾shift+$ (中文输入法下没用)
+              shift+#  全文搜索光标停在的单词上        
+              n  是在搜索之后查找下一个！
+
+
+               a 增加文本(一般在行尾添加数据时候使用) 
+               i 增加文本（一般在行首添加数据时使用）
+               o 增加一行（）
+
+               全篇进行缩进：gg=G
+               多行同时缩进：n+shift+>>
+               也可用v（可视化选择几行，不用计算n）然后shift+>
+               不要用n+== 那样它不能把这几行当成一个整体去缩进
+               设置5个确保通用性(5个全都会高亮显示)
+               set nu
+               set autoindent
+               set softtabstop=4
+               set shiftwidth=4
+               set expandtab
+
+
+               投消  u   ctrl + r
+               vi里面没有列操作，都是针对行
+                                       
+               
+               ZZ ( :x  :wq也行)    保存退出
+
+               home end 行首，尾
+               n＋enter  光标向下移动n行！
+
+
+
+
+tar 常用指令:
+        tar  -zcvf  xxx
+        tar  -zxvf  xxx.tar.gz
+        tar  -xvf  xxx.tar
+
+     
+     tar是一个打包指令（就是将多个文件当成一个文件）
+     gzip 是压缩指令，但是只能压缩一个文件，
+     现在的UNIX都将gzip融合到的tar指令中！
+     -z  表示要用到gzip
+     -c  表示压缩compress
+     -x  表示解压express
+     -f  表示后面要开始加文件名了，所以它是最后一个参数
+
+    (将z换成j就是针对tar.bz2的文件了！)    
+    
+
+
+
+
+
+
+
+
+
+

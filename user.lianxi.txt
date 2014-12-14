@@ -1,0 +1,109 @@
+1.练习3种工作模式间的切换
+2.在vi模式:w   :e   :e!  :r 
+3.vi打开新文件
+输入如下内容：
+Read sendmail/README, especially:
+   a. the introduction
+   b. the BUILDING SENDMAIL
+   c. the relevant part(s) of the OPERATING SYSTEM AND COMPILE QUIRKS section
+4.保存文件，文件名：text1
+5.光标停在第三行BUILDING的首字母B上如何快速移动到下个单词SENDMAIL，如何快速移动到行尾
+6.  i  I  o  O   a  A都是什么含义
+7.翻页
+8.将SENDMAIL单词复制到文章的最后一行后
+10.保存退出text1和text2文件
+11.同时打开这两个文件和/root/install.log文件，练习文件之间的切换
+（next，prev，first，last）
+12.同时打开两个文件在同一屏中，如何切换。
+13.命令模式下 dd   d$  d^  J dw 都是什么含义
+14.设置行标,取消行标(set  number;set nonumber)
+15.查找大写S字母，查找并替换t为T
+16.撤销上一步的操作
+17.如何在末行模式将光标定位到100行
+
+19.在末行模式  ：s/bsdd/abc 和  ：s/bsdd/abc/g有什么区别
+上面的命令能将文件的内所有行的bsdd转换成abc吗？ 如何想替换全部  如何操作、
+20.如何想把文件的第8行 到第12行的BS111 转化成aaa如何操作？
+
+22.练习gedit
+23.复制/etc/services文件到/root下，vi  /root/services打开
+练习行的快速定位
+从1行去160行再到455行再回到第一行，再到文章尾
+
+请在 /root 这个目录下建立一个名为 vitest 的目录；
+
+         进入 vitest 这个目录当中。
+
+         将 /etc/man.config 拷贝到本目录底下；
+
+         使用 vi 打开本目录下的 man.config 这个文件。
+
+         在 vi 中设定行号。
+
+         移动到第58行，向右移动 40 个字符，请问您看到的双引号内是什么？ 
+
+         移动到第一行，并且向下搜寻一下text 这个字符串，请问他在第几行？ 
+
+         接着下来，我要将 50 到 100 行之间的 man 改为 MAN ，并且一个一个挑选是否需要修改，如何下达指令？
+
+         修改完之后，突然反悔了，要全部复原，有哪些方法？ 
+
+         我要复制 51 到 60 行这十行的内容，并且贴到最后一行之后；
+
+         删除 11 到 30 行之间的这 20 行； 
+
+         将这个档案另存成一个 /tmp/man.test.config 的文件名；
+
+
+
+
+
+
+
+
+
+1.创建一个用户：test,密码为：123456。使用test用户在tty2（终端2）登录，查看登录的目录，在宿主目录里创建文件a ,b, c, d，和目录abc。并查找含有字符a的文件
+2.创建组grp，创建用户test1属于该组。修改密码，并在tty3登录。
+3．查看/etc/passwd,/etc/shadow，/etc/group,查看用户、密码、组是否创建成功。
+4.把test帐号锁定，使其不能登陆系统。
+5．删除组grp
+6.将b用户的密码设置为uplooking，测试登陆，修改自己的密码：123.com
+7.锁定b用户密码.
+9.创建uplooking组，将b，test用户添加入uplooking组中，作为附加组
+
+用户操作：
+1.	添加用户user1，user2，user3，user4.
+2.	为所以用户都设置密码为 ”redhat”.
+3.	指定user1的家目录为/home/u1
+4.	指定user2没有登录的shell
+5.	创建admin组
+6.	指定user3的主组是admin
+7.	指定user4的附加组是admin
+8.	将user1组加入到user2的附加组中
+9.	修改user3的密码为”uplooking”
+
+11.	修改自己的环境变量 在用户退出登录时 显示 byebye！！！！    并且给root用的 命令和参数 userdel -r  起一个别名 userdelr
+	并使其生效
+2.cd /下 然后创建文件/root/tt.txt  /xx.txt 和/aa.txt  创建目录/root/aa/bb   拷贝/root/tt.txt到/root/aa/并改名字为hh.txt 
+cd /root下 拷贝/xx.txt 到 /root/aa/bb下   移动/aa.txt 到 /root/aa/bb下 并改名字为kk.txt
+3.删除 /root/tt.txt  /xx.txt 和/aa.txt 删除目录/root/aa/bb
+4.cd /root目录下 创建user1。。。user10 十个文件
+
+1.创建一个用户：test,密码为：123456。使用test用户在tty2（终端2）登录，查看登录的目录，在宿主目录里创建文件a ,b, c, d，和目录abc
+2.创建组grp，创建用户test1属于该组。修改密码，并在tty3登录。
+3．查看/etc/passwd,/etc/shadow，/etc/group,查看用户、密码、组是否创建成功。
+4.把test帐号锁定，使其不能登陆系统。
+5．删除组grp
+6.将b用户的密码设置为uplooking，测试登陆，修改自己的密码：123.com
+7.锁定b用户密码.
+9.创建uplooking组，将b，test用户添加入uplooking组中，作为附加组
+
+
+
+
+
+
+
+
+
+

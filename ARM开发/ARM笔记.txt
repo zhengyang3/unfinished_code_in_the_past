@@ -1,0 +1,126 @@
+第一天：
+    1：很多CPU都不支持浮点运算和除法运算，编程时尽量避免！
+    2：ARM11 是ARM1176的简称  采用 ARMV6指令集版本！
+    3：Cortex-Ax  采用的指令集是ARMV7版本！
+    4：SOC 片上系统 （cpu和各种控制器集成在一起了） intel平台的南桥和
+          北桥就是控制器（作用就是产生各种硬件自己的时序、控制信号等！）
+    5:桥，两个总线速度进行匹配转换！
+    6：片选信号：数据传输时总线首先选择数据传送到哪个部分！
+    7：tcp 与 udp 都可以有服务端与客户端，只不过发送数据的时候，一个是
+        打电话，一个是发短信！
+    8：设置开机自启动setup
+    9: mount 是把本地的某个设备挂载到本地的某个文件夹下(跟网络无关！)
+    10：段错误是因为访问了不该访问的内存（包括不存在和没有权限访问的内存！）
+    11：pc做服务端，那么网卡就不以自动设置ip，必须要手动设置
+    12: 波特率是每秒传输多少位数据，串口一般都要指定，一般采用115200
+    13：
+
+
+    setenv servrip 192.
+    saveenv 
+    ping 192.
+    nand read 只能对开发板内存操作！
+    tftp 0x50000000 (32位) u-boot-nand.bin
+    cp u-boot-nand.bin /tftp/boot/
+    nand write 50000000 0 40000(这个表示长度)
+    
+    cp uImage /tftp/boot
+    tftp 拷贝格式： tftp 50008000 uImage
+    bootm 50008000 (内核运行地址)
+
+    mkdir nfsroot
+    chmod 777 nfsroot -R
+    vim /etc/exports
+            /nfsroot * (rw, sync, no_root_squash)
+    
+    service nfs start
+    setup 
+        nfs
+    
+
+    showmount -e <server ip>
+    查看服务器共享目录
+    mount -t nfs 192.168.1.10:/nfsroot<client dir>
+
+    mount -t nfs 192.168.1.10:/nfsroot /mnt
+
+    set bootargs "root=/dev/nfs nfsroot=192.168.1.10:/nfsroot ip=192.168.1.20
+        console=ttySAC0,115200（将输出信息通过串口输出到屏幕）" 
+    －－这是在设置内核启动的根目录！
+
+
+
+    save
+    tftp 50008000 uImage(如果不用引导内核，可以写成其它的地址！)
+
+
+    printenv setenv savenv  这是对环境变量的操作，要记住！
+
+
+    nand scrub 跳过坏块使用
+
+
+
+
+第三天：
+    片选信号：CS 信号
+    fixed 固定的
+    pheriperal  外部设备 
+    pc    program counter  pc指针，cpu执行下一条指令的地址！
+    栈是用来保存自动变量的！
+
+
+
+
+最后一周：
+	LCD:
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    

@@ -1,0 +1,816 @@
+关闭防火墙
+service iptables stop
+chkconfig iptables off
+关闭selinux（linux安全组件）
+setenforce 0
+getenforce
+vim /etc/selinux/config
+SELINUX=disabled
+
+使用vnc
+服务端
+系统-->首选项--->远程桌面
+客户端
+vncviewer 192.168.0.254
+
+ftp连接
+ftp://192.168.0.254
+位置---连接服务器----写入192.168.0.254----连接
+
+
+1.安装
+2.图形介绍
+3.基本命令
+命令 -[参数].......  [文件].......
+[root@localhost ~]# ls -l install.log
+-:rw-r--r--: 1 :root :root :39410 :2013-09-10 :install.log
+文件类型:权限位:硬连接数:拥有者:所属组:大小:文件最后一次修改时间:文件名
+
+- 普通文件
+d 目录文件
+l 链接文件
+c 字符文件
+b 块设备文件
+p 管道文件
+s 套接字文件
+
+ls -l 长格式显示  -a 显示所有文件 -A 除了.和..所有文件 (. 当前目录 ..上层目录)
+   -h 按最大单位显示  -t按时间排序  -r 反向排序 -d目录信息 -R 递归显示
+
+帮助命令
+1.--help
+2.type
+alias la='ls -alh'
+unalias la
+3.info 
+4.man
+man 1  用户命令 *
+man 2  系统调用
+man 3  库调用
+man 4  特殊文件
+man 5  配置文件 *
+man 6  游戏
+man 7  杂项
+man 8  系统命令 *
+man 9  内核参考 
+
+makewhatis  维护man后台
+man -f passwd
+man -k passwd
+
+cd / . ..  ../..  ~ -回到上次工作目录
+绝对路径和相对路径(路径前边有没有/)
+pwd
+
+ctrl+l 清屏
+ctrl+c 中断
+
+查看文件内容
+head install.log
+head -n 30 install.log
+head -30 install.log
+
+tail install.log
+tail -n 50 install.log
+tail -50 install.log
+tail -f /var/log/messages 监控一个日志文件
+
+more install.log
+less install.log
+
+cat -n install.log
+cat -b install.log
+
+|　前一个命令输出结果作为后一个命令输入
+cat -n install.log | less
+
+创建文件和目录
+touch
+touch aa.txt
+touch cc.txt tt.txt
+touch abc{1..10}.txt
+touch {a,b,c}{1..5}.txt
+
+mkdir
+mkdir abc
+mkdir abcd abce
+mkdir abc{1..10}
+mkdir {a,b,c}{1..5}
+mkdir -pv aa/bb  p递归 v显示创建过程
+
+拷贝和剪切
+cp
+cp /root/install.log /
+cp /root/install.log /test.txt
+cp -r /root/abc/ /tmp/
+
+剪切
+mv
+mv /root/abc1.txt /tmp/
+mv /root/abc1.txt /tmp/aa.txt
+mv tt.txt newtt.txt
+
+删除
+rmdir 只能删除空目录
+rm
+rm -f cc.txt
+rm -rf /root/abc/
+rm -rf *.txt
+rm -rf abc*
+
+1.创建以下目录结构(并且验证)
+	 /aa	
+	/   \
+       ba/   bb/
+      /  \     \
+     ca/  cb/   cc/
+一条命令 
+mkdir -pv /aa/ba/c{a,b} /aa/bb/cc
+tree -L 2 /
+ls -R /
+2.从ba目录进入ca目录 有几中方法? 
+绝对路径和 相对路径
+3.拷贝/etc/man.config 到 ca目录并且重命名为test.txt 两种写法 (/root)
+cp /etc/man.config /aa/ba/ca/test.txt
+cp ../etc/man.config ../aa/ba/ca/test.txt
+4.移动test.txt到cc/ 两种写法
+mv /aa/ba/ca/test.txt /aa/bb/cc/
+mv ../aa/ba/ca/test.txt ../aa/bb/cc/
+5.两次拷贝同一文件到同一位置不出现覆盖提示
+\cp install.log /
+1.unalias cp 
+2./bin/cp /root/install.log /
+
+/目录下目录作用
+/bin /usr/bin /usr/lcoal/bin   普通用户可执行目录
+/sbin /usr/sbin /usr/local/sbin 系统可执行目录
+/lib /usr/lib /usr/local/lib  库文件和内核模块
+/etc	配置文件目录
+/usr	应用程序目录
+/var	服务器数据目录
+/boot	引导程序目录(内核,启动文件,引导程序)
+/dev	块设备和字符设备目录
+/tmp	临时文件目录
+/proc	进程信息目录(进程信息和内存信息.内核参数)(伪文件系统)
+/sys	进程信息目录(进程信息和内存信息.内核参数)(伪文件系统)
+/root	管理员家目录
+/home	普通用户家目录
+/mnt	其他挂在点
+/opt	第三方软件目录
+/srv	服务器数据目录
+/misc和/net autofs服务使用目录
+/tftpboot  tftp服务使用的目录
+/selinux  selinux安全组件使用的目录
+/media	媒介目录(光盘,u盘)
+
+
+vim(vi)文本编辑器 
+命令模式进入输入模式的方法
+a 在当前字符后输入
+A 在当前行行尾输入
+i 在当前字符前输入
+I 在当前行行首输入
+o 在当前行的下一行输入
+O 在当前行的上一行输入
+
+home键位 行首  end键位  行尾
+
+命令模式
+u 撤销一步操作  ctrl+r 重做
+yy 复制一行  p 粘贴
+50yy 复制50行
+dd 剪切一行  dd 删除一行
+50dd 剪切/删除50行
+^ 行首  $行尾
+d^ d$ y^ y$
+w 下一个单词的首字符
+dw yw
+
+G 尾行 gg 首行 750G定位到750行 或750gg
+dgg  dG ygg  yG
+
+末行模式
+:w q  wq  w! q! wq!
+:e /root/aa.txt
+:w /root/file.txt  另存
+:2,4w newfile.txt
+
+查找 / ? N n
+替换
+%s/ab/$$/g   % 所有行  s 交换    g 全局
+:3,5s/ab/$$/gc   c交互式
+%s/\n// 替换换行
+%s/ // 匹配每行的第一个空格
+:%s/^ // 替换每行开头的第一个空格
+%s/^ *// 替换每行开头的所有空格
+%s/^\s*$\n// 替换所有空行
+删除空行
+g/^$/d
+g/^\s*$/d
+
+:set nu
+:set nonu
+:set autoindent  自动缩近
+:set noautoindent
+:set softtabstop=4  设置指标符号长度
+
+:X  
+
+vim 配置文件 /etc/vimrc
+
+可视化模式
+v 
+y  d   p
+
+可视化块模式
+ctrl+v
+选取插入内容后边字符  shift+i  输入字符  ESC两次
+
+shfit+k 直接调用man
+
+vim教程:gedit /usr/share/vim/vim70/tutor/tutor.zh.euc
+
+vim aa.txt cc.txt tt.txt
+:args  :next  :prev  :first :last   ctrl+6
+
+vimdiff aa.txt cc.txt tt.txt
+ctrl+w+w
+
+vim -O aa.txt cc.txt tt.txt
+vim -o aa.txt cc.txt tt.txt
+
+
+用户管理（环境）
+
+uid 0  root 			gid 0  root组
+uid 1-499 系统用户		gid 1-499  系统组
+uid 500-60000 普通uid		gid 500-60000 普通用户组
+
+添加用户
+保存用户信息的文件/etc/passwd
+abc:x:500:500:PTuser:/home/abc:/bin/bash
+用户名:密码占位符:uid:gid:描述信息:家目录:shell
+
+useradd -u 1000 -g abc -c hello -d /opt/abc2 -s /bin/ksh abc2
+su - abc2
+
+添加组
+groupadd -g 502 uplooking
+配置文件 /etc/group 
+uplooking:x:502:
+组名:组密码占位符:gid:(用户名)
+
+练习:
+添加组upup gid位1500
+添加用户zorro uid 1500 属于upup组 描述为hello  家目录/mnt  shell  /bin/bash
+groupadd -g 1500 upup
+useradd -u 1500 -g upup/1500 -c hello -d /mnt/zorro -s /bin/bash
+su - zorro
+
+设定密码
+passwd zorro
+密码的配置文件:/etc/shadow
+abc:$1$dvjWgXfz$.fNmwbN572Hn8NyD.GNIn/:15959:0:99999:7:::
+1.用户名
+2.密码
+3.最后一次修改密码的时间
+4.密码最小时间  
+5.密码最大时间
+6.密码过期前的提示时间
+7.密码过期后帐号过期时间
+8.帐号有效期
+9.保留
+
+修改帐号信息
+usermod -u -g -c -d -s uesrname
+usermod -L username 锁定帐号
+usermod -U username 解锁帐号
+usermod -l new-username  old-username
+
+修改组信息
+groupmod -g groupname
+groupmod -n new-groupname old-groupname
+
+修改密码信息
+passwd -n 修改最小时间 -x 修改最大时间 -w 密码过期前警告时间 -i密码国旗后帐号过期时间
+
+passwd -l abc
+passwd -u abc
+passwd -S abc
+
+练习:
+添加用户 robin seker 分别设置密码为123
+锁定robin帐号 锁定seker密码  终端登录 查看能否登录 返回值是否一致?
+查看shadow文件 在密码位robin和seker有什么变化?
+
+删除用户信息
+userdel -r newabc2
+groupdel abc1
+
+添加用户时默认配置文件 /etc/default/useradd
+HOME=/home
+SHELL=/bin/bash
+
+对普通用户配置:/etc/login.defs
+
+附加组
+useradd -G yw,kf wg
+usermod -a -G kf wg
+
+
+用户家目录下的环境配置文件
+.bash_history  记录历史命令的配置文件(用户退出时写入)
+.bash_logout   当用户退出时,执行该文件中的命令
+.bashrc	       记录用户定义的别名和函数
+.bash_profile  用户执行命令的路径
+
+自定义变量子进程不能继承
+环境变量子进程可以继承
+
+.bashrc shell级别环境变量配置文件
+.bash_profile   登录级别环境变量配置文件
+
+su - 登录级别用户切换
+su   shell级别用户切换
+
+/etc/bashrc 全局bashrc配置文件(shell级别)
+/etc/profile 全觉profile配置文件(登录级别)
+
+/etc/profile
+.bash_profile
+.bashrc
+/etc/bashrc
+
+权限管理
+[root@localhost ~]# ll install.log
+-|rw-r-----| 1 robin uplooking 39410 09-10 20:05 install.log
+
+	rwx    |    rwx      |  rwx
+	robin 	  uplooking    zorro
+	user(u)   group(g)    other(o)  
+
+uid=0--------->uid=user----->gid=uplooking----->other
+
+对文件   r--------read  cat head tail......
+         w--------write  vim vi  gedit > >>
+         x--------exec   ./  绝对路径
+对目录
+	 r-------- ls        r-x
+	 w-------- touch rm   -wx(只能删除已知文件名文件)   rwx    
+         x-------- cd
+
+chmod u+r file/dir
+chmod u-r,g+w  file/dir
+chmod ug+r file/dir
+chmod ugo+rw file/dir
+chmod a+rwx file/dir
+
+chmod u=rw file/dir
+chmod u=rw,o=rx file/dir
+chmod ug=rwx  file/dir
+chmod ugo=rw file/dir
+chmod a=rx file/dir
+
+/			rwxr-xr-x     755
+/root 			rwxr-x---     750
+/etc			rwxr-xr-x     755
+/var			rwxr-xr-x     755
+/tmp			rwxrwxrwt    1777
+/home/robin		rwx------     700
+/etc/shadow		r--------     400
+/etc/passwd		rw-r--r--     644
+root用户创建文件	rw-r--r--     644
+root用户创建目录	rwxr-xr-x     755
+普通用户创建文件	rw-rw-r--     664
+普通用户创建目录	rwxrwxr-x     775
+
+r---------4
+w---------2
+x---------1  
+777
+
+666		023
+110110110	000010011
+111101100	111101100
+110100100
+644
+
+
+拥有者与所属组的修改
+chown robin tt.txt 
+chgrp uplooking tt.txt
+chown .root tt.txt
+chown robin.uplooking tt.txt 
+.=:
+
+chown -R　robin.uplooking tt.txt
+chmod　777  dir/
+
+公司有财务报表,每月交给boss,
+cw.txt boss cw     r--rw----　  
+
+
+
+
+有个test　　test下文件aa.txt
+robin　　zorro
+
+robin可以读写aa.txt　但是不能删除
+zorro不可以读写　　可以删除
+
+/tmp/test  zorro root rwxr-xr-x
+/test/test/aa.txt  robin root rw-r-----
+robin
+zorro
+
+chown robin /test/test/aa.txt
+chmod 640 /test/test/aa.txt
+chown zorro /test/test/
+
+高级权限
+suid
+作用:任何用户在执行拥有suid权限的命令时,都以该命令拥有者身份执行
+必须作用于文件
+必须二进制可执行文件
+chmod　u+s　file
+实验:
+通过高级权限,使普通用户可以使用cat查看shadow文件内容
+chmod　u+s　/bin/cat
+
+sgid
+作用:任何用户在用有sgid的目录下创建文件时,创建的文件都要继承目录的组
+必须作用于目录
+chmod g+s dir/
+实验:
+1.在/tmp/创建目录test 权限修改为777
+用户robin 在/tmp/test目录下创建文件tt.txt  该文件tt.txt所属组是?
+robin
+2.在test目录上添加sgid权限
+用户robin 在/tmp/test目录下创建文件cc.txt  该文件cc.txt所属组是?
+root
+3.修改test目录的所属组为uplooking
+用户robin 在/tmp/test目录下创建文件xx.txt  该文件xx.txt所属组是?cc.txt所属组是?
+uplooking  root
+4.用户robin在test目录下创建目录hello 该目录权限是什么?该目录所属组是?
+rwxrwsrwx uplooking
+
+
+sticky(粘贴位 冒险位) t
+作用:任何用户在用有t权限的目录下创建的文件,只能该用户自己删除
+必须作用于目录
+chmod o+t dir/
+实验:
+/tmp/test 777  创建用户 robin和zorro
+1.robin在/tmp/test/目录下创建文件aa.txt  zorro能不能删除aa.txt?
+2.在/tmp/test目录上添加t权限 robin在/tmp/test目录下创建文件xx.txt zorro能不能删除xx.txt. zorro在/tmp/test创建文件yy.txt robin能不能删除?
+3.root用户能不能删除/tmp/test目录下的文件
+4.创建用户jack 修改/tmp/test拥有者为jack   jack能不能删除robin或者zorro在/tmp/test目录下创建的文?
+
+
+suid-------4
+sgid-------2
+sticky-----1
+4777
+2777
+1777
+3777
+
+进程管理（脚本）
+静态查询
+ps -ef | head -5
+ps aux
+动态查询
+top
+
+kill -9 pid
+kill -15 pid
+pkill httpd
+killall httpd
+xkill
+
+前后台切换
+xclock -update 1
+xclock -update 1 &
+
+ctrl＋z 后台挂起
+jobs
+bg 编号
+fg 编号
+
+kill ％编号 杀后台进程
+
+PROCESS STATE CODES
+D    Uninterruptible sleep (usually IO)
+R    Running or runnable (on run queue)
+S    Interruptible sleep (waiting for an event to complete)
+T    Stopped, either by a job control signal or because it is being traced.
+W    paging (not valid since the 2.6.xx kernel)
+X    dead (should never be seen)
+Z    Defunct ("zombie") process, terminated but not reaped by its parent.
+
+<    high-priority (not nice to other users) 
+N    low-priority (nice to other users)
+L    has pages locked into memory (for real-time and custom IO)
+s    is a session leader
+l    is multi-threaded (using CLONE_THREAD, like NPTL pthreads do)
++    is in the foreground process group
+
+优先级调整（-20~19）
+nice -n -20 xclock -update 1 &
+renice 15 -p pid
+ps lf
+
+shell基础
+!! 在执行一次上一条命令
+!798 在执行一次798条命令
+!ser 在执行一次最后一条以ser开头的命令
+!$ 引用上一条命令最后一个参数
+alt+.
+
+> >>
+1>  标准正确输出,如果文件存在则覆盖,如果不存在创建
+1>> 标准正确输出,如果文件存在则追加,如果不存在创建
+2>  标准错误输出,如果文件存在则覆盖,如果不存在创建
+2>> 标准错误输出,如果文件存在则追加,如果不存在创建
+&> /dev/null
+
+
+[root@localhost ~]# cat user.sh 
+#!/bin/bash
+#添加user1～user10 10个用户
+for i in {1..10}
+do
+        echo "正在添加用户user$i 稍后！"
+        useradd user$i
+        sleep 1
+        echo "添加用户user$i密码 稍后! "
+        echo 123 | passwd --stdin user$i 1>/dev/null
+        sleep 1
+        echo "添加用户，设置密码成功"
+done
+
+[root@localhost ~]# cat file.sh 
+#!/bin/bash
+# 判断文件是否存在
+if [ -f /tmp/aa.txt ]
+then
+        echo "文件存在! 显示文件信息！！！！"
+        ls -l /tmp/aa.txt
+else
+        echo "文件不存在,创建文件 稍后！！！"
+        touch /tmp/aa.txt
+fi
+
+[root@localhost ~]# cat cs.sh 
+#!/bin/bash
+# 超市查询系统
+echo "************************************************"
+echo "***1.苹果***2.香蕉***3.橘子***4.西瓜***5.退出***"
+echo "************************************************"
+while true
+do
+read -p "请您输入你想要查询水果的代码：" var
+        if [ $var -eq 1 ]
+        then
+                echo "苹果    15/kg"
+        elif [ $var -eq 2 ]
+        then
+                echo "香蕉    10/kg"
+        elif [ $var -eq 3 ]
+        then
+                echo "橘子    18/kg"
+        elif [ $var -eq 4 ]
+        then
+                echo "西瓜    20/kg"
+        elif [ $var -eq 5 ]
+        then
+                break;
+        else
+                echo "请输入正确商品代码"
+        fi
+done
+
+
+
+软件安装（各种软件包，yum库使用）
+压缩
+gzip  bzip2
+dd if=/dev/zero of=data bs=100M count=2
+du -sh data
+gzip data
+gunzip data.gz
+bzip2 data
+bunzip2 data.bz2
+
+打包
+tar -cvf boot.tar /boot/
+tar -tvf boot.tar
+tar -rvf boot.tar /root/install.log
+tar -xvf boot.tar
+
+tar -zcvf boot.tar.gz /boot/ 
+tar -ztvf boot.tar.gz
+tar -zxvf boot.tar.gz
+
+tar -jcvf boot.tar.bz2 /boot/ 
+tar -jtvf boot.tar.bz2
+tar -jxvf boot.tar.bz2
+
+tar -zcvf /home/boot.tar.gz /boot
+tar -zxvf boot.tar.gz -C /tmp/
+
+RPM包安装
+挂载
+cat /dev/cdrom >> /root/rhel5u8.iso
+mount /var/ftp/ULE/rhel5u8.iso /mnt/ -o loop
+mount  查询
+umount /mnt/ 或者 umount /var/ftp/ULE/rhel5u8.iso 卸载
+umount -l /mnt/  强制卸载
+
+安装
+rpm -ivh httpd-2.2.3-63.el5.i386.rpm
+rpm -q httpd  查询
+rpm -ql httpd 查询安装位置
+rpm -qa  | grep http
+rpm -qf /etc/man.config  通过文件查询安装包名称
+rpm -qf `which cat`
+rpm -qc httpd  查询配置文件
+rpm -qd httpd  查询文档
+rpm -e httpd  卸载软件
+ 
+rpm -ivh httpd-2.2.3-63.el5.i386.rpm --force
+
+解决依赖关系 
+[root@localhost Server]# rpm -ivh httpd-devel-2.2.3-63.el5.i386.rpm 
+warning: httpd-devel-2.2.3-63.el5.i386.rpm: Header V3 DSA signature: NOKEY, key ID 37017186
+error: Failed dependencies:
+        apr-devel is needed by httpd-devel-2.2.3-63.el5.i386
+        apr-util-devel is needed by httpd-devel-2.2.3-63.el5.i386
+[root@localhost Server]# rpm -ivh apr-devel-1.2.7-11.el5_6.5.i386.rpm 
+warning: apr-devel-1.2.7-11.el5_6.5.i386.rpm: Header V3 DSA signature: NOKEY, key ID 37017186
+Preparing...                                                            (1########################################### [100%]
+   1:apr-devel                                                          ( ########################################### [100%]
+[root@localhost Server]# rpm -ivh apr-util-devel-1.2.7-11.el5_5.2.i386.rpm 
+warning: apr-util-devel-1.2.7-11.el5_5.2.i386.rpm: Header V3 DSA signature: NOKEY, key ID 37017186
+Preparing...                                                            (1########################################### [100%]
+   1:apr-util-devel                                                     ( ########################################### [100%]
+[root@localhost Server]# rpm -ivh httpd-devel-2.2.3-63.el5.i386.rpm warning: httpd-devel-2.2.3-63.el5.i386.rpm: Header V3 DSA signature: NOKEY, key ID 37017186
+Preparing...                                                            (1########################################### [100%]
+   1:httpd-devel                                                        ( ########################################### [100%]
+
+
+rpm -e apr-devel --nodeps  不检测依赖关系卸载
+
+yum库的使用
+1.mount /var/ftp/ULE/rhel5u8.iso /mnt -o loop
+2.vim /etc/yum.conf
+  gpgcheck=0
+3.cd /etc/yum.repos.d/
+  touch yum.repo
+  vim yum.repo
+  [rhel-server]
+  name=cdrom server
+  baseurl=file:///mnt/Server
+  enabled=1
+  gpgcheck=0
+测试
+yum list  测试是否能读取yum库的内容
+yum install httpd-devel  安装
+yum remove apr-devel  卸载
+yum reinstall httpd-devel  重新安装
+yum clean all 清楚yum缓存
+
+源码包
+1.
+./configure --prefix=/usr/local/lftp
+2.
+make
+3.
+make install
+
+测试
+/usr/local/lftp/bin/lftp 192.168.0.254
+
+
+
+
+lftp 192.168.0.254
+lftp 192.168.0.254:~> ls
+drwxr-xr-x    3 0        0            4096 Sep 13 03:32 ULE
+drwxr-xr-x    2 0        0            4096 Dec 05  2011 pub
+lftp 192.168.0.254:/> cd ULE/
+lftp 192.168.0.254:/ULE> get biji.txt 下载文件 
+ftp 192.168.0.254:/ULE> mirror software/  下载目录
+
+
+网络
+ifconfig
+ifconfig eth0
+ifconfig eth0 10.10.10.10
+
+静态ip地址设定
+setup
+
+网卡配置文件
+vim /etc/sysconfig/network-scripts/ifcfg-eth0 
+
+ping
+
+
+服务（ftp nfs tftp）
+
+tftp
+配置文件
+vim /etc/xinetd.d/tftp
+service tftp
+{
+        socket_type             = dgram
+        protocol                = udp
+        wait                    = yes
+        user                    = root
+        server                  = /usr/sbin/in.tftpd
+        server_args             = -s /tftpboot
+        disable                 = no  --------------------------开启
+        per_source              = 11
+        cps                     = 100 2
+        flags                   = IPv4
+}
+service xinetd restart
+主目录/tftpboot
+yum install tftp
+[root@localhost tmp]# tftp 192.168.0.254
+tftp>get install.log
+tftp>quit
+
+ls install.log
+
+支持上传
+server_args             = -s -c /tftpboot
+
+chmod  o+w  /tftp
+
+tftp> put man.config
+tftp> quit
+
+
+nfs服务
+配置文件:/etc/exports
+启动服务:service portmap restart
+	service nfs restart  
+
+服务端：
+mkdir /nfs
+vim /etc/exports	
+/nfs	*(rw)
+/nfs	192.168.0.0/24(rw) 192.168.10.0/24(ro)
+/nfs	192.168.0.110(rw)
+
+
+
+showmount -a 
+
+chmod o+w /nfs 
+
+客户端(192.168.0.110)
+showmount -e 192.168.0.254
+mount 192.168.0.254:/nfs  /mnt
+
+FTP服务器
+安装包
+vsftpd-2.0.5-24.el5.i386.rpm 服务端
+lftp-3.7.11-7.el5.i386.rpm 客户端
+端口：20 21
+配置文件：/etc/vsftpd/vsftpd.conf
+启动服务：service vsftpd restart
+主目录：/var/ftp
+
+上传文件
+vim /etc/vsftpd/vsftpd.conf
+anon_upload_enable=YES
+anon_mkdir_write_enable=YES
+
+service vsftpd restart
+
+chmod  777  /var/ftp/pub
+
+lftp 192.168.0.254
+lftp 192.168.0.254 :> put file
+lftp 192.168.0.254 :> mirror -R dir/ 
+
+
+单用户模式
+重启----->读秒----->任意键----->e(edit)------->选择第二行----->e(edit)----->该行最后 输入 空格 数字 1   回车------>b(boot)
+设置密码  reboot重启
+
+远程连接
+ssh 192.168.0.254
+scp cw.txt 192.168.0.254:/tmp/
+
+
+
+
+
+
+
+
+
